@@ -12,12 +12,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/greek/img-transform/internal/handlers"
+	env "github.com/greek/img-transform/internal/lib/envloader"
 )
 
 var ctx = context.Background()
 
 // Init initializes a web server.
 func Init() {
+	env.CheckEnv()
+
 	r := mux.NewRouter()
 	handlers.Register(r)
 
