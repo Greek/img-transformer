@@ -55,7 +55,7 @@ func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, err
 		errMsg := ""
 		if errors.As(err, &ogerr) {
 			if ogerr.ErrorCode() == "NotFound" {
-				errMsg = "Bucket not found"
+				errMsg = "bucket not found"
 			}
 			logger.Error(errMsg, slog.Any("code", ogerr.ErrorCode()))
 		} else {
@@ -74,7 +74,7 @@ func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, err
 		errMsg := ""
 		if errors.As(err, &ogerr) {
 			if ogerr.ErrorCode() == "NoSuchKey" {
-				errMsg = "File not found"
+				errMsg = "file not found"
 			}
 			logger.Error(errMsg, slog.Any("code", ogerr.ErrorCode()))
 		} else {

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/greek/img-transform/internal/lib"
+	"github.com/greek/img-transform/internal/img"
 	"github.com/greek/img-transform/internal/lib/logging"
 	s3lib "github.com/greek/img-transform/internal/lib/s3"
 )
@@ -43,13 +43,16 @@ func GetFile(w http.ResponseWriter, req *http.Request) {
 
 	data, err := s3.GetFile(bucket, key)
 	if err != nil {
-		lib.WriteJSONError(w, http.StatusNotFound, err.Error())
+		w.Write([]byte(err.Error()))
 		return
 	}
+	defer data.Body.Close()
+
+	img.ApplyTransformations(&data.Body, transforms)
 
 	w.Header().Set("Content-Type", *data.ContentType)
-	defer data.Body.Close()
 	if _, err := io.Copy(w, data.Body); err != nil {
-		lib.WriteJSONError(w, http.StatusInternalServerError, "Unable to write file data")
+		w.WriteHeader(404)
+		w.Write([]byte("unable to write file data"))
 	}
 }
