@@ -44,6 +44,8 @@ func InitS3() *S3Client {
 }
 
 func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, error) {
+	logger := logging.BuildLogger("GetFile")
+
 	_, err := c.rawS3.HeadBucket(c.ctx, &s3aws.HeadBucketInput{
 		Bucket: &bucket,
 	})
@@ -52,10 +54,12 @@ func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, err
 		var ogerr smithy.APIError
 		errMsg := ""
 		if errors.As(err, &ogerr) {
-			switch code := ogerr.ErrorCode(); code {
-			case "NoSuchBucket":
+			if ogerr.ErrorCode() == "NotFound" {
 				errMsg = "Bucket not found"
 			}
+			logger.Error(errMsg, slog.Any("code", ogerr.ErrorCode()))
+		} else {
+			logger.Error("Unknown error", slog.Any("error", err))
 		}
 
 		return s3aws.GetObjectOutput{}, errors.New(errMsg)
@@ -66,13 +70,18 @@ func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, err
 		Bucket: &bucket,
 	})
 	if err != nil {
-		var awserr smithy.APIError
-		msg := ""
-		if errors.As(err, &awserr) {
-			msg = awserr.ErrorMessage()
+		var ogerr smithy.APIError
+		errMsg := ""
+		if errors.As(err, &ogerr) {
+			if ogerr.ErrorCode() == "NoSuchKey" {
+				errMsg = "File not found"
+			}
+			logger.Error(errMsg, slog.Any("code", ogerr.ErrorCode()))
+		} else {
+			logger.Error("Unknown error", slog.Any("error", err))
 		}
 
-		return s3aws.GetObjectOutput{}, errors.New(msg)
+		return s3aws.GetObjectOutput{}, errors.New(errMsg)
 	}
 
 	return *data, nil
