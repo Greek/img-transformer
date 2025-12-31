@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/greek/img-transform/internal/lib"
 )
 
 func RegisterRoutes(r *mux.Router) {
@@ -11,5 +12,6 @@ func RegisterRoutes(r *mux.Router) {
 }
 
 func GetRoot(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("Hello world!"))
+	data := map[string]string{"message": "Hello world!"}
+	lib.WriteJSONSuccess(res, http.StatusOK, data)
 }
