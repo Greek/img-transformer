@@ -11,6 +11,7 @@ import (
 type EnvData struct {
 	S3_ACCESS_KEY string `env:"S3_ACCESS_KEY"`
 	S3_SECRET_KEY string `env:"S3_SECRET_KEY"`
+	S3_REGION     string `env:"S3_REGION"`
 }
 
 var cfg EnvData
@@ -43,6 +44,11 @@ func CheckEnv() {
 
 	if len(cfg.S3_SECRET_KEY) == 0 {
 		log.Error("S3_SECRET_KEY is not defined, exiting")
+		os.Exit(1)
+	}
+
+	if len(cfg.S3_REGION) == 0 {
+		log.Error("S3_REGION is not defined, exiting")
 		os.Exit(1)
 	}
 }
