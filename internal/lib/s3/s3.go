@@ -7,6 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	s3aws "github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
+
 	env "github.com/greek/img-transform/internal/lib/envloader"
 	"github.com/greek/img-transform/internal/lib/logging"
 )
@@ -41,18 +43,37 @@ func InitS3() *S3Client {
 	return &S3Client{rawS3: client, ctx: ctx, logger: logger}
 }
 
-func (c S3Client) GetFile(bucket string, key string) (string, error) {
-	input := &s3aws.HeadBucketInput{
+func (c S3Client) GetFile(bucket string, key string) (s3aws.GetObjectOutput, error) {
+	_, err := c.rawS3.HeadBucket(c.ctx, &s3aws.HeadBucketInput{
 		Bucket: &bucket,
-	}
+	})
 
-	_, err := c.rawS3.HeadBucket(c.ctx, input)
 	if err != nil {
-		errMsg := "failed to get bucket metadata"
+		var ogerr smithy.APIError
+		errMsg := ""
+		if errors.As(err, &ogerr) {
+			switch code := ogerr.ErrorCode(); code {
+			case "NoSuchBucket":
+				errMsg = "Bucket not found"
+			}
+		}
 
-		c.logger.Error(errMsg, slog.String("error", err.Error()), slog.String("bucket", bucket))
-		return "", errors.New(errMsg)
+		return s3aws.GetObjectOutput{}, errors.New(errMsg)
 	}
 
-	return "mock data", nil
+	data, err := c.rawS3.GetObject(ctx, &s3aws.GetObjectInput{
+		Key:    &key,
+		Bucket: &bucket,
+	})
+	if err != nil {
+		var awserr smithy.APIError
+		msg := ""
+		if errors.As(err, &awserr) {
+			msg = awserr.ErrorMessage()
+		}
+
+		return s3aws.GetObjectOutput{}, errors.New(msg)
+	}
+
+	return *data, nil
 }

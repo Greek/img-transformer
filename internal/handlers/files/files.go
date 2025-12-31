@@ -1,11 +1,14 @@
 package files
 
 import (
-	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/greek/img-transform/internal/lib"
+	"github.com/greek/img-transform/internal/lib/logging"
 	s3lib "github.com/greek/img-transform/internal/lib/s3"
 )
 
@@ -29,22 +32,24 @@ func parseTransformation(fragment string) []string {
 
 // GetFile retrieves a file from a specified bucket.
 func GetFile(w http.ResponseWriter, req *http.Request) {
+	logger := logging.BuildLogger("GetFile")
 	vars := mux.Vars(req)
 
 	bucket := vars["bucket"]
 	key, _, _ := strings.Cut(vars["key"], "=")
 	transforms := parseTransformation(req.URL.Path)
 
-	mockData := MockData{Transformations: transforms}
+	logger.Info("Getting file "+bucket+"/"+key, slog.Any("transforms", transforms))
 
-	_, err := s3.GetFile(bucket, key)
+	data, err := s3.GetFile(bucket, key)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		lib.WriteJSONError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(mockData); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	w.Header().Set("Content-Type", *data.ContentType)
+	defer data.Body.Close()
+	if _, err := io.Copy(w, data.Body); err != nil {
+		lib.WriteJSONError(w, http.StatusInternalServerError, "Unable to write file data")
 	}
 }
