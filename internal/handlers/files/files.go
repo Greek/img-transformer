@@ -1,19 +1,23 @@
 package files
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
+	s3lib "github.com/greek/img-transform/internal/lib/s3"
 )
 
 func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/{bucket}/{key}", GetFile).Methods("GET")
 }
 
+var s3 = s3lib.InitS3()
+
 // TransformationCmds
-type TransformationCmds struct {
+type MockData struct {
+	Transformations []string `json:"commands"`
 }
 
 func parseTransformation(fragment string) []string {
@@ -31,10 +35,16 @@ func GetFile(w http.ResponseWriter, req *http.Request) {
 	key, _, _ := strings.Cut(vars["key"], "=")
 	transforms := parseTransformation(req.URL.Path)
 
-	fmt.Println(vars)
-	fmt.Println(bucket)
-	fmt.Println(key)
-	fmt.Println(transforms)
+	mockData := MockData{Transformations: transforms}
 
-	w.Write([]byte("Hello world! again..."))
+	_, err := s3.GetFile(bucket, key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(mockData); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+	}
 }

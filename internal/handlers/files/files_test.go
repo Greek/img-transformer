@@ -11,6 +11,6 @@ func TestParseTransformation(t *testing.T) {
 
 	output := parseTransformation(path)
 	if !slices.Equal(output, expected) {
-		t.Errorf(`parseTransformation("/testbucket1/testfile1.png=w32,h32,r16") = %q, want %q`, output, expected)
+		t.Errorf(`parseTransformation("%q") = %q, want %q`, path, output, expected)
 	}
 }
