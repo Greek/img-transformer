@@ -1,6 +1,7 @@
 package files
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/greek/img-transform/internal/img"
+	"github.com/greek/img-transform/internal/lib"
 	"github.com/greek/img-transform/internal/lib/logging"
 	s3lib "github.com/greek/img-transform/internal/lib/s3"
 )
@@ -48,10 +50,19 @@ func GetFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer data.Body.Close()
 
-	img.ApplyTransformations(&data.Body, transforms)
+	transformedImage, err := img.ApplyTransformations(data.Body, transforms)
+	if err != nil {
+		var httpErr lib.ErrResponse
+		if errors.As(err, &httpErr) {
+			w.WriteHeader(httpErr.ErrCode())
+			w.Write([]byte("unable to apply transformations: " + httpErr.ErrReason()))
+		}
 
-	w.Header().Set("Content-Type", *data.ContentType)
-	if _, err := io.Copy(w, data.Body); err != nil {
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/png")
+	if _, err := io.Copy(w, transformedImage); err != nil {
 		w.WriteHeader(404)
 		w.Write([]byte("unable to write file data"))
 	}
