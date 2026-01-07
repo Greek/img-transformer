@@ -2,16 +2,8 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
-
-// ErrResponse is the interface for generating HTTP errors.
-type ErrResponse interface {
-	error
-	ErrCode() int
-	ErrReason() string
-}
 
 // JSONResponse represents a standard JSON response with data and error fields
 type JSONResponse struct {
@@ -43,22 +35,4 @@ func WriteJSONError(w http.ResponseWriter, statusCode int, err any) error {
 	}
 
 	return json.NewEncoder(w).Encode(response)
-}
-
-// HTTPErr is a custom error type for generating coherent HTTP errors.
-type HTTPErr struct {
-	Code   int
-	Reason string
-}
-
-func (e *HTTPErr) Error() string {
-	return fmt.Sprintf("error %d: %s", e.Code, e.Reason)
-}
-
-func (e *HTTPErr) ErrCode() int {
-	return e.Code
-}
-
-func (e *HTTPErr) ErrReason() string {
-	return e.Reason
 }
