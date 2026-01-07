@@ -2,7 +2,9 @@ package img
 
 import (
 	"bytes"
+	"errors"
 	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/greek/img-transform/internal/lib"
@@ -20,7 +22,6 @@ func ApplyTransformations(imageReader io.Reader, transformations []string) (io.R
 	for _, v := range transformations {
 		logger.Info("Applying transformation: " + v)
 
-		// Create a buffer to hold the output of the transformation
 		processedImage := new(bytes.Buffer)
 		writer := io.Writer(processedImage)
 
@@ -30,15 +31,20 @@ func ApplyTransformations(imageReader io.Reader, transformations []string) (io.R
 				radiusStr := strings.Split(v, "_")[1]
 				err = applyRounding(currentImage, writer, radiusStr)
 			}
-		default:
-			return nil, &lib.HTTPErr{Reason: "transformation not supported", Code: 400}
 		}
+
+		// needed to guarantee image is processed regardless of any transformations
+		logger.Debug("copying current image onto writer")
+		_, err = io.Copy(writer, currentImage)
 
 		if err != nil {
-			return nil, err
+			var ogErr lib.ErrResponse
+			if errors.As(err, &ogErr) {
+				logger.Error("Failed to transform image", slog.String("cause", ogErr.ErrReason()))
+				return nil, err
+			}
 		}
 
-		// The output of the last transformation becomes the input for the next
 		currentImage = bytes.NewReader(processedImage.Bytes())
 	}
 
