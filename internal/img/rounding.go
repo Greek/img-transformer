@@ -14,12 +14,12 @@ import (
 func applyRounding(r io.Reader, w io.Writer, radiusStr string) error {
 	radius, err := strconv.Atoi(radiusStr)
 	if radius > 512 {
-		return &lib.HTTPErr{Code: 400, Reason: "radius too large"}
+		return lib.NewErrResponse("radius too large", 400)
 	}
 
 	img, _, err := image.Decode(r)
 	if err != nil {
-		return &lib.HTTPErr{Code: 500, Reason: "image decoding failed"}
+		return lib.NewErrResponse("image decoding failed", 500)
 	}
 
 	// Create a new RGBA image with the same bounds as the original
@@ -38,7 +38,7 @@ func applyRounding(r io.Reader, w io.Writer, radiusStr string) error {
 	// Encode the result to the writer as a PNG
 	err = png.Encode(w, dst)
 	if err != nil {
-		return &lib.HTTPErr{Code: 500, Reason: "image encoding failed"}
+		return lib.NewErrResponse("image encoding failed", 500)
 	}
 	return nil
 }

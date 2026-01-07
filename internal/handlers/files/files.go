@@ -54,7 +54,7 @@ func GetFile(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		var httpErr lib.ErrResponse
 		if errors.As(err, &httpErr) {
-			w.WriteHeader(httpErr.ErrCode())
+			w.WriteHeader(httpErr.ErrHTTPCode())
 			w.Write([]byte("unable to apply transformations: " + httpErr.ErrReason()))
 		}
 

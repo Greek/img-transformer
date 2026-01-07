@@ -5,30 +5,30 @@ import "fmt"
 // ErrResponse is the interface for generating HTTP errors.
 type ErrResponse interface {
 	error
-	ErrCode() int
+
 	ErrHTTPCode() int
 	ErrReason() string
 }
 
-// HTTPErr is a custom error type for generating coherent HTTP errors.
-type HTTPErr struct {
+// httpErr is a custom error type for generating coherent HTTP errors.
+type httpErr struct {
 	Code     int
 	HTTPCode int
 	Reason   string
 }
 
-func (e *HTTPErr) Error() string {
+func NewErrResponse(reason string, httpCode int) ErrResponse {
+	return &httpErr{Reason: reason, HTTPCode: httpCode}
+}
+
+func (e *httpErr) Error() string {
 	return fmt.Sprintf("error %d: %s", e.HTTPCode, e.Reason)
 }
 
-func (e *HTTPErr) ErrCode() int {
-	return e.Code
-}
-
-func (e *HTTPErr) ErrHTTPCode() int {
+func (e *httpErr) ErrHTTPCode() int {
 	return e.HTTPCode
 }
 
-func (e *HTTPErr) ErrReason() string {
+func (e *httpErr) ErrReason() string {
 	return e.Reason
 }

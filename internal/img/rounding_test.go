@@ -80,8 +80,8 @@ func TestApplyRounding_Error(t *testing.T) {
 		t.Fatalf("Expected a RoundErr, but got %T", err)
 	}
 
-	if roundErr.ErrCode() != 400 {
-		t.Errorf("Expected error code 400, but got %d", roundErr.ErrCode())
+	if roundErr.ErrHTTPCode() != 400 {
+		t.Errorf("Expected error code 400, but got %d", roundErr.ErrHTTPCode())
 	}
 
 	expectedReason := "radius too large"
